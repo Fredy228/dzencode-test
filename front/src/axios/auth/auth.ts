@@ -16,6 +16,7 @@ export const registerUser = async (
   formData.append("email", credentials.email);
   formData.append("password", credentials.password);
   formData.append("name", credentials.name);
+  formData.append("captcha", credentials.captcha);
   if (credentials.image) formData.append("image", credentials.image);
 
   const { data } = await $authAPI.post("/auth/register", formData);

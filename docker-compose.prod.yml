@@ -11,7 +11,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=${PORT_MAIN}
-    command: bash -c "npm run build && npm run start:prod"
+    command: bash -c "npm i && npm run build && npm run start:prod"
     volumes:
       - ./backend:/app
       - ./backend/node_modules:/app/node_modules
@@ -23,7 +23,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=${PORT_AUTH}
-    command: bash -c "npm run build && npm run start:prod"
+    command: bash -c "npm i && npm run build && npm run start:prod"
     volumes:
       - ./auth:/app
       - ./auth/node_modules:/app/node_modules

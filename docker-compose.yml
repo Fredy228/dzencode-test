@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  front:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    container_name: front
+    command: bash -c "REACT_APP_RECAPTCHA_KEY=${REACT_APP_RECAPTCHA_KEY} && REACT_APP_WEBSOCKET_URL=${REACT_APP_WEBSOCKET_URL} && REACT_APP_SERVER_AUTH_URL=${REACT_APP_SERVER_AUTH_URL} && REACT_APP_SERVER_BACKEND_URL=${REACT_APP_SERVER_BACKEND_URL} && npm i && npm run start"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./front:/app
+      - ./front/node_modules:/app/node_modules
+    depends_on:
+      - auth
+    env_file:
+      - .env
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: main_server
+    environment:
+      - NODE_ENV=development
+      - PORT=${PORT_MAIN}
+    ports:
+      - "${PORT_MAIN}:${PORT_MAIN}"
+    volumes:
+      - ./backend:/app
+      - ./backend/node_modules:/app/node_modules
+    command: bash -c "npm i && npm run start:dev"
+    depends_on:
+      - postgres
+      - rabbitmq
+      - redis
+    env_file:
+      - .env
+
+  auth:
+    build:
+      context: ./auth
+      dockerfile: Dockerfile
+    container_name: auth_server
+    environment:
+      - NODE_ENV=development
+      - PORT=${PORT_AUTH}
+    ports:
+      - "${PORT_AUTH}:${PORT_AUTH}"
+    volumes:
+      - ./auth:/app
+    command: bash -c "npm i && npm run start:dev"
+    depends_on:
+      - backend
+    env_file:
+      - .env
+
+  postgres:
+    image: postgres
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./database:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT}:5432"
+    env_file:
+      - .env
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+    ports:
+      - "${RABBITMQ_PORT}:5672"
+      - "${RABBITMQ_WEB_PORT}:15672"
+    env_file:
+      - .env
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    restart: always
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
+    env_file:
+      - .env
+
+  nginx:
+    build:
+      context: ./nginx
+      target: development
+    container_name: nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - front
+    volumes:
+      - ./nginx/dev/nginx.conf:/etc/nginx/nginx.conf
+      - ./front/build:/build

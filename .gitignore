@@ -1,0 +1,14 @@
+.env
+.idea
+database
+
+backend/node_modules
+backend/dist
+backend/static
+
+auth/node_modules
+auth/dist
+auth/static
+
+front/node_modules
+front/build

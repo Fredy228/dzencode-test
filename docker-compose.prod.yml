@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  front:
+    command: bash -c "REACT_APP_RECAPTCHA_KEY=${REACT_APP_RECAPTCHA_KEY} REACT_APP_WEBSOCKET_URL=${REACT_APP_WEBSOCKET_URL} && REACT_APP_SERVER_AUTH_URL=${REACT_APP_SERVER_AUTH_URL} && REACT_APP_SERVER_BACKEND_URL=${REACT_APP_SERVER_BACKEND_URL} && npm i && npm run build"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - PORT=${PORT_MAIN}
+    command: bash -c "npm run build && npm run start:prod"
+    volumes:
+      - ./backend:/app
+      - ./backend/node_modules:/app/node_modules
+
+  auth:
+    build:
+      context: ./auth
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - PORT=${PORT_AUTH}
+    command: bash -c "npm run build && npm run start:prod"
+    volumes:
+      - ./auth:/app
+      - ./auth/node_modules:/app/node_modules
+
+  nginx:
+    build:
+      context: ./nginx
+      target: production
+    volumes:
+      - ./nginx/prod/nginx.conf:/etc/nginx/nginx.conf
+      - ./front/build:/build
